@@ -6,14 +6,14 @@
 使用JAVA编写，支持插件式开发，方便感兴趣的朋友们一起开发和拓展。
 
 >### I. 准备工作
-1. 安装JAVA允许环境(version 1.8)：[官网下载](https://www.oracle.com/java/technologies/downloads/#java8-windows) 
+1. 安装JAVA运行环境(version 1.8)：[官网下载](https://www.oracle.com/java/technologies/downloads/#java8-windows) 
 
 2. 安装GO-CQHTTP：[官方下载](https://github.com/Mrs4s/go-cqhttp/releases) | [官方文档](https://docs.go-cqhttp.org/)
 
 3. 下载本项目：[发行版](https://gitee.com/q695290484/simple-cqhttp-processor/releases/download/Release/gocqhttpSDK-0.0.1-SNAPSHOT.jar)
 
 >### II. 配置
-1. 使用命令提示符运行go-cqhttp，按提示运行成功后会自动生成配置文件
+1. 使用命令提示符运行go-cqhttp.exe，按提示运行成功后会自动生成配置文件
 
 2. 使用文本工具打开go-cqhttp的配置文件config.yml，注意以下配置要和步骤3对应：
 ```
@@ -53,7 +53,7 @@ public class GroupMemberAdd extends PluginInterfaces {
 ```
     @Override
     public RETURN_PLUGIN handle(JSONObject jsonParam) {
-        // 用户加群时会触发这里,因为加群的上报类型为notice
+        // 用户加群时这里会触发,因为加群的上报类型为notice
 
         // 如果不是入群通知则跳过处理
         if(null == msgType || !"group_increase".equals(msgType))
