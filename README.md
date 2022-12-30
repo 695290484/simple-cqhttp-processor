@@ -10,7 +10,7 @@
 
 2. 安装GO-CQHTTP：[官方下载](https://github.com/Mrs4s/go-cqhttp/releases) | [官方文档](https://docs.go-cqhttp.org/)
 
-3. 下载本项目
+3. 下载本项目：[发行版](https://gitee.com/q695290484/simple-cqhttp-processor/releases/download/Release/gocqhttpSDK-0.0.1-SNAPSHOT.jar)
 
 >### II. 配置
 1. 使用命令提示符运行go-cqhttp，按提示运行成功后会自动生成配置文件
@@ -85,6 +85,8 @@ java -jar gocqhttpSDK-0.0.1-SNAPSHOT.jar
 >#### 开发需要注意的问题收集
 ```
 1. 获取事件上报数据的json中的数值时先get()后调用toString()，或者用getBigInteger()而不是getInteger()或getLong()等，因为fastJSON会根据数值大小转成不同类型，固定死了反而会报错。
+
+2. 关于go-cqhttp上报的以及API返回的数据格式参考go-cqhttp帮助文档
 ```
 
 
