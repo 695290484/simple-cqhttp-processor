@@ -15,24 +15,28 @@ public class EventHandler {
     private static final Logger log = LoggerFactory.getLogger(EventHandler.class);
 
     // 按添加先后注册处理器(post_type -> 请求数据)
-    static Map<String, List<PluginInterfaces>> listHandlers = new HashMap<>();
+    static Map<String, List<PluginInfo>> listHandlers = new HashMap<>();
 
     // 注册处理器
-    public static void regist(String post_type, Class chh){
-        List<PluginInterfaces> list = listHandlers.get(post_type);
+    public static void regist(PluginInfo pluginInfo){
+        List<PluginInfo> list = listHandlers.get(pluginInfo.PostType);
         if(list == null)
             list = new ArrayList<>();
 
-        Object obj = ApplicationContextProvider.getBean(chh);
+        Object obj = pluginInfo.PluginObject;
         if(obj != null) {
-            if (obj instanceof PluginInterfaces) {
-                list.add((PluginInterfaces) obj);
-                listHandlers.put(post_type, list);
+            if(pluginInfo.fromJar == 0) {
+                if (obj instanceof PluginInterfaces) {
+                    list.add(pluginInfo);
+                    listHandlers.put(pluginInfo.PostType, list);
+                } else
+                    log.error("注册失败,事件处理器 {} 没有继承 {}", pluginInfo.PluginObject.getClass().getName(), PluginInterfaces.class.getName());
+            }else{
+                list.add(pluginInfo);
+                listHandlers.put(pluginInfo.PostType, list);
             }
-            else
-                log.error("注册失败,事件处理器 {} 没有继承 {}", chh.getName(), PluginInterfaces.class.getName());
-        }else{
-            log.error("注册失败,事件处理器 {} 没有交给Spring管理", chh.getName());
+        }else if(pluginInfo.fromJar == 0){
+            log.error("注册失败,事件处理器 {} 没有交给Spring管理", pluginInfo.PluginObject.getClass().getName());
         }
     }
 }

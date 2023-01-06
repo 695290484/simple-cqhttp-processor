@@ -8,4 +8,5 @@ import java.lang.annotation.*;
 public @interface PostType {
     PT value() default PT.message;
     int order() default 0;
+    String pluginName() default "";
 }

@@ -101,7 +101,9 @@ public class Scanner {
 
     public void addClass(Set<Class<?>> classes, String filePath, String packageName) throws Exception {
         File[] files = new File(filePath).listFiles(file -> (file.isFile() && file.getName().endsWith(".class")) || file.isDirectory());
-        assert files != null;
+        if(files == null)
+            return;
+
         for (File file : files) {
             String fileName = file.getName();
             if (file.isFile()) {
