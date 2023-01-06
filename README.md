@@ -89,6 +89,11 @@ java -jar gocqhttpSDK-0.0.1-SNAPSHOT.jar
 2. 关于go-cqhttp上报的以及API返回的数据格式参考go-cqhttp帮助文档
 ```
 
+>## New* 新增对外部Jar包形式的插件支持 2023/01/07
+>#### 支持独立于处理端主程序的插件编写
+>#### 将插件.jar放入处理端jar文件同目录下的Plugins文件夹即可
+>#### [示例](https://gitee.com/q695290484/scqhp-plugindemo)
 
 
+---
 >##### _感谢go-cqhttp的开发者们提供的代码和帮助文档，本项目基于开源协议[AGPL3.0](https://gitee.com/q695290484/simple-cqhttp-processor/blob/master/LICENSE)_
