@@ -56,87 +56,86 @@ public class ScanPlugins {
                 path = path.substring(6, path.lastIndexOf(File.separator)) + "\\Plugins";
 
                 File pluginPath = new File(path);
-                if (!pluginPath.isDirectory())
-                    return;
+                if (pluginPath.isDirectory()) {
 
-                File[] files = new File(path).listFiles();
-                URL[] urls = new URL[files.length];
-                List<URL> listURL = new ArrayList<>();
-                for (File f : files)
-                    listURL.add(f.toURI().toURL());
+                    File[] files = new File(path).listFiles();
+                    URL[] urls = new URL[files.length];
+                    List<URL> listURL = new ArrayList<>();
+                    for (File f : files)
+                        listURL.add(f.toURI().toURL());
 
-                URLClassLoader urlClassLoader = new URLClassLoader(listURL.toArray(urls));
+                    URLClassLoader urlClassLoader = new URLClassLoader(listURL.toArray(urls));
 
-                List<PluginInfo> listPlugins = new ArrayList<>();
+                    List<PluginInfo> listPlugins = new ArrayList<>();
 
-                for (File f : files) {
+                    for (File f : files) {
 
-                    String className = null;
-                    Object o = null;
-                    Object initObject = null;
-                    JarFile jarFile = null;
-                    try {
-                        jarFile = new JarFile(f.getPath());
-                        Enumeration<JarEntry> entries = jarFile.entries();
-                        List<String> classNames = getClassNames(entries);
-                        for (String x : classNames) {
-                            if (x.equals("Plugin")) {
-                                initObject = loadAndInstanceClass(x, urlClassLoader);
-                                className = x;
-                            }else if(x.contains(".Plugins.")){
-                                o = loadAndInstanceClass(x, urlClassLoader);
-                                className = x;
-                                Annotation[] annotations = o.getClass().getAnnotations();
-                                for (int i = 0;i<annotations.length;++i){
-                                    Annotation an = annotations[i];
-                                    if(an.annotationType().toString().endsWith(".PostType")){
-                                        PluginInfo pi = new PluginInfo();
-                                        pi.PluginClass = o.getClass().getName();
-                                        pi.PluginObject = o;
-                                        pi.fromJar = 1;
+                        String className = null;
+                        Object o = null;
+                        Object initObject = null;
+                        JarFile jarFile = null;
+                        try {
+                            jarFile = new JarFile(f.getPath());
+                            Enumeration<JarEntry> entries = jarFile.entries();
+                            List<String> classNames = getClassNames(entries);
+                            for (String x : classNames) {
+                                if (x.equals("Plugin")) {
+                                    initObject = loadAndInstanceClass(x, urlClassLoader);
+                                    className = x;
+                                } else if (x.contains(".Plugins.")) {
+                                    o = loadAndInstanceClass(x, urlClassLoader);
+                                    className = x;
+                                    Annotation[] annotations = o.getClass().getAnnotations();
+                                    for (int i = 0; i < annotations.length; ++i) {
+                                        Annotation an = annotations[i];
+                                        if (an.annotationType().toString().endsWith(".PostType")) {
+                                            PluginInfo pi = new PluginInfo();
+                                            pi.PluginClass = o.getClass().getName();
+                                            pi.PluginObject = o;
+                                            pi.fromJar = 1;
 
-                                        Map<String, Object> stringObjectMap = transStringToMap(an.toString().substring(an.toString().indexOf("(") + 1, an.toString().length() - 1), ",", "=");
+                                            Map<String, Object> stringObjectMap = transStringToMap(an.toString().substring(an.toString().indexOf("(") + 1, an.toString().length() - 1), ",", "=");
 
-                                        pi.PluginName = stringObjectMap.get("pluginName")==null?"":stringObjectMap.get("pluginName").toString();
-                                        System.out.println(JSON.toJSONString(stringObjectMap));
-                                        pi.PluginOrder = Integer.parseInt(stringObjectMap.get("order").toString());
-                                        pi.PostType = stringObjectMap.get("value").toString();
-                                        listPlugins.add(pi);
+                                            pi.PluginName = stringObjectMap.get("pluginName") == null ? "" : stringObjectMap.get("pluginName").toString();
+                                            System.out.println(JSON.toJSONString(stringObjectMap));
+                                            pi.PluginOrder = Integer.parseInt(stringObjectMap.get("order").toString());
+                                            pi.PostType = stringObjectMap.get("value").toString();
+                                            listPlugins.add(pi);
+                                        }
                                     }
+                                }
+                            }
+
+                            // 将外部jar插件放入pluginCollection
+                            pluginCollection.addAll(listPlugins);
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } finally {
+                            if (jarFile != null) {
+                                try {
+                                    jarFile.close();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
                                 }
                             }
                         }
 
-                        // 将外部jar插件放入pluginCollection
-                        pluginCollection.addAll(listPlugins);
+                        if (null != initObject && null != className) {
+                            Method method = initObject.getClass().getDeclaredMethod("init", String.class);
 
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (jarFile != null) {
-                            try {
-                                jarFile.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                            // 获取所有application.properties文件中的配置并传给插件
+                            ResourceBundle bean = ResourceBundle.getBundle("application");
+                            Enumeration<String> keys = bean.getKeys();
+                            Map<String, Object> keyMap = new HashMap<>();
+                            while (keys.hasMoreElements()) {
+                                String key = keys.nextElement();
+                                keyMap.put(key, bean.getObject(key));
                             }
+
+                            method.invoke(initObject, JSON.toJSONString(keyMap));
                         }
                     }
-
-                    if (null != initObject && null != className) {
-                        Method method = initObject.getClass().getDeclaredMethod("init", String.class);
-
-                        // 获取所有application.properties文件中的配置并传给插件
-                        ResourceBundle bean = ResourceBundle.getBundle("application");
-                        Enumeration<String> keys = bean.getKeys();
-                        Map<String,Object> keyMap = new HashMap<>();
-                        while(keys.hasMoreElements()){
-                            String key = keys.nextElement();
-                            keyMap.put(key, bean.getObject(key));
-                        }
-
-                        method.invoke(initObject, JSON.toJSONString(keyMap));
-                    }
-
                 }
             }
 
