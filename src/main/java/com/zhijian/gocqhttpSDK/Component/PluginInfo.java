@@ -7,4 +7,5 @@ public class PluginInfo {
     public String PostType;
     public Object PluginObject;
     public Integer fromJar;
+    public int paused;
 }

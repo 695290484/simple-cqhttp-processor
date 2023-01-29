@@ -26,6 +26,9 @@ public class EventDataHandler {
         for (PluginInfo info: interfaceList){
             Class<?> clazz = info.PluginObject.getClass();
 
+            if(info.paused > 0)
+                continue; //暂停状态的插件不调用
+
             try {
                 if(info.fromJar == 0) {
                     Method handle = clazz.getMethod("handle", JSONObject.class);

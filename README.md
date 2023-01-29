@@ -11,6 +11,32 @@
 `以上为内嵌形式的插件，不定时更新，有些并不能直接使用`   
 <br>
 
+>### 基本命令(New* 2023/1/29) (示例)
+1. `plugins` 显示当前已加载的插件
+
+Total 3 plugins, 3 running, 0 paused.(使用'pause/unpause 编号'可关开插件)
+
+
+|编号|类名|插件名|上报类型|顺序|外部插件|状态|
+|----|----|----|----|----|----|----|
+|  1   |  com.zhijian.gocqhttpSDK.Plugins.MetaEvent   |         | meta_event |  0   |     0      |running|
+|  2   |com.zhijian.gocqhttpSDK.Plugins.PrivateMessage|         |  message   |  0   |     0      |running|
+|  3   | com.zhijian.gocqhttpSDK.Plugins.GroupMessage |         |  message   |  0   |     0      |running|
+
+
+2. `pause` 暂停插件
+   >示例
+   > <br>pause 1   暂停编号为1的插件
+   > <br>pause 0   暂停所有插件
+3. `unpause` 恢复运行
+   >示例
+   > <br>unpause 1   恢复编号为1的插件
+   > <br>unpause 0   恢复所有插件
+
+
+
+<br>
+
 >### 简介
 配合 go-cqhttp 使用的 简易消息处理端（QQ机器人）
 
