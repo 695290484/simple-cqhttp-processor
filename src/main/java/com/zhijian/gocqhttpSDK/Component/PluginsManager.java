@@ -42,14 +42,14 @@ public class PluginsManager implements ApplicationListener<ContextRefreshedEvent
             List<PluginInfo> allPlugins = getPluginsList();
             if(0 >= id){
                 for (PluginInfo pi: allPlugins){
-                    pi.paused = 1;
+                    pi.paused = 0;
                 }
                 logger.info("全部插件已恢复");
             }else if(id <= allPlugins.size()){
-                allPlugins.get(id-1).paused = 1;
+                allPlugins.get(id-1).paused = 0;
                 logger.info("插件{}:{} [{}]已恢复,使用'unpause id'命令恢复", id, allPlugins.get(id-1).PluginClass,allPlugins.get(id-1).PluginName);
             }else{
-                logger.error("暂停出错[插件id:{}超过了上限,最大不应超过{}]", id, allPlugins.size());
+                logger.error("恢复出错[插件id:{}超过了上限,最大不应超过{}]", id, allPlugins.size());
             }
         }
     }
@@ -66,7 +66,7 @@ public class PluginsManager implements ApplicationListener<ContextRefreshedEvent
                 }
                 logger.info("全部插件已暂停,使用'unpause 0'恢复");
             }else if(id <= allPlugins.size()){
-                allPlugins.get(id+1).paused = 1;
+                allPlugins.get(id-1).paused = 1;
                 logger.info("插件{}:{} [{}]已暂停,使用'unpause id'命令恢复", id, allPlugins.get(id-1).PluginClass,allPlugins.get(id-1).PluginName);
             }else{
                 logger.error("暂停出错[插件id:{}超过了上限,最大不应超过{}]", id, allPlugins.size());
