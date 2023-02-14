@@ -106,9 +106,6 @@ public class ScanPlugins {
                                 }
                             }
 
-                            // 将外部jar插件放入pluginCollection
-                            pluginCollection.addAll(listPlugins);
-
                         } catch (IOException e) {
                             e.printStackTrace();
                         } finally {
@@ -136,6 +133,9 @@ public class ScanPlugins {
                             method.invoke(initObject, JSON.toJSONString(keyMap));
                         }
                     }
+
+                    // 将外部jar插件放入pluginCollection
+                    pluginCollection.addAll(listPlugins);
                 }
             }
 
