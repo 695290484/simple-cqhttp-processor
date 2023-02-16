@@ -6,6 +6,8 @@ public class PluginInfo {
     public Integer PluginOrder;
     public String PostType;
     public Object PluginObject;
+
     public Integer fromJar;
     public int paused;
+    public ClassLoader classLoader;
 }

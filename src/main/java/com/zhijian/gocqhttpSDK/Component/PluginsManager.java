@@ -74,7 +74,7 @@ public class PluginsManager implements ApplicationListener<ContextRefreshedEvent
         }
     }
 
-    List<PluginInfo> getPluginsList(){
+    public List<PluginInfo> getPluginsList(){
         Map<String, List<PluginInfo>> listHandlers = EventHandler.listHandlers;
         List<PluginInfo> allPlugins = new ArrayList<>();
         listHandlers.forEach((k,v)->{
@@ -122,7 +122,7 @@ public class PluginsManager implements ApplicationListener<ContextRefreshedEvent
             throw new RuntimeException("标头heads[]不能为空!");
         }
 
-        if (null == data || null == data[0] || data[0].length <= 0) {
+        if (null == data || 0 == data.length || null == data[0] || data[0].length <= 0) {
             throw new RuntimeException("数据data[][]不能为空!");
         }
         if (heads.length != data[0].length) {

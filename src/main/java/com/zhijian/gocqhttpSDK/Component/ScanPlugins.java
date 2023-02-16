@@ -2,7 +2,11 @@ package com.zhijian.gocqhttpSDK.Component;
 
 import com.alibaba.fastjson.JSON;
 import com.zhijian.gocqhttpSDK.Annotation.PostType;
+import com.zhijian.gocqhttpSDK.Interface.impl.LocalClassloader;
 import com.zhijian.gocqhttpSDK.SDKApplication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -25,6 +29,11 @@ public class ScanPlugins {
     @Resource
     private ConfigurableEnvironment springEnv;
 
+    @Autowired
+    LocalClassloader localClassloaderloader;
+
+    private static final Logger log = LoggerFactory.getLogger(ScanPlugins.class);
+
     @PostConstruct()
     public void init(){
         // 扫描Plugins包 将@PostType注解的处理器注册进去
@@ -37,6 +46,9 @@ public class ScanPlugins {
             List<Class<?>> list = new ArrayList<>();
             list.addAll(set2);
 
+            ClassLoader contextClassloader = ScanPlugins.class.getClassLoader();
+            localClassloaderloader.setFrameClassloader(contextClassloader);
+
             // 放入pluginCollection
             for (Class<?> c : list) {
                 PluginInfo pi = new PluginInfo();
@@ -46,6 +58,8 @@ public class ScanPlugins {
                 pi.PluginOrder = c.getAnnotation(PostType.class).order();
                 pi.PostType = c.getAnnotation(PostType.class).value().name();
                 pi.fromJar = 0;
+                pi.classLoader = contextClassloader;
+
                 pluginCollection.add(pi);
             }
 
@@ -88,24 +102,29 @@ public class ScanPlugins {
                                         initObject = loadAndInstanceClass(x, urlClassLoader);
                                         className = x;
                                     } else if (x.contains(".Plugins.")) {
-                                        o = loadAndInstanceClass(x, urlClassLoader);
-                                        className = x;
-                                        Annotation[] annotations = o.getClass().getAnnotations();
-                                        for (int i = 0; i < annotations.length; ++i) {
-                                            Annotation an = annotations[i];
-                                            if (an.annotationType().toString().endsWith(".PostType")) {
-                                                PluginInfo pi = new PluginInfo();
-                                                pi.PluginClass = o.getClass().getName();
-                                                pi.PluginObject = o;
-                                                pi.fromJar = 1;
+                                        try {
+                                            o = loadAndInstanceClass(x, urlClassLoader);
+                                            className = x;
+                                            Annotation[] annotations = o.getClass().getAnnotations();
+                                            for (int i = 0; i < annotations.length; ++i) {
+                                                Annotation an = annotations[i];
+                                                if (an.annotationType().toString().endsWith(".PostType")) {
+                                                    PluginInfo pi = new PluginInfo();
+                                                    pi.PluginClass = o.getClass().getName();
+                                                    pi.PluginObject = o;
+                                                    pi.fromJar = 1;
+                                                    pi.classLoader = urlClassLoader;
 
-                                                Map<String, Object> stringObjectMap = transStringToMap(an.toString().substring(an.toString().indexOf("(") + 1, an.toString().length() - 1), ",", "=");
+                                                    Map<String, Object> stringObjectMap = transStringToMap(an.toString().substring(an.toString().indexOf("(") + 1, an.toString().length() - 1), ",", "=");
 
-                                                pi.PluginName = stringObjectMap.get("pluginName") == null ? "" : stringObjectMap.get("pluginName").toString();
-                                                pi.PluginOrder = Integer.parseInt(stringObjectMap.get("order").toString());
-                                                pi.PostType = stringObjectMap.get("value").toString();
-                                                listPlugins.add(pi);
+                                                    pi.PluginName = stringObjectMap.get("pluginName") == null ? "" : stringObjectMap.get("pluginName").toString();
+                                                    pi.PluginOrder = Integer.parseInt(stringObjectMap.get("order").toString());
+                                                    pi.PostType = stringObjectMap.get("value").toString();
+                                                    listPlugins.add(pi);
+                                                }
                                             }
+                                        }catch(Exception e){
+                                            log.error("插件[{}]加载失败", x);
                                         }
                                     }
                                 }
@@ -124,18 +143,24 @@ public class ScanPlugins {
                             }
 
                             if (null != initObject && null != className) {
-                                Method method = initObject.getClass().getDeclaredMethod("init", String.class);
+                                Method initMethod = null;
 
-                                // 获取所有application.properties文件中的配置并传给插件
-                                ResourceBundle bean = ResourceBundle.getBundle("application");
-                                Enumeration<String> keys = bean.getKeys();
-                                Map<String, Object> keyMap = new HashMap<>();
-                                while (keys.hasMoreElements()) {
-                                    String key = keys.nextElement();
-                                    keyMap.put(key, bean.getObject(key));
+                                try {
+                                    initMethod = initObject.getClass().getDeclaredMethod("init", String.class);
+                                }catch (NoSuchMethodException e){}
+
+                                if(initMethod != null) {
+                                    // 获取所有application.properties文件中的配置并传给插件
+                                    ResourceBundle bean = ResourceBundle.getBundle("application");
+                                    Enumeration<String> keys = bean.getKeys();
+                                    Map<String, Object> keyMap = new HashMap<>();
+                                    while (keys.hasMoreElements()) {
+                                        String key = keys.nextElement();
+                                        keyMap.put(key, bean.getObject(key));
+                                    }
+                                    initMethod.invoke(initObject, JSON.toJSONString(keyMap));
                                 }
 
-                                method.invoke(initObject, JSON.toJSONString(keyMap));
                             }
 
                         }
@@ -155,38 +180,6 @@ public class ScanPlugins {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private static List<String> getClassNames(Enumeration<JarEntry> entries) {
-        List<String> classNames = new ArrayList<String>();
-        while (entries.hasMoreElements()) {
-            JarEntry nextElement = entries.nextElement();
-            String name = nextElement.getName();
-
-            if (name.endsWith(".class")) {
-                String replace = name.replace(".class", "").replace("/", ".");
-                classNames.add(replace);
-            }
-        }
-        return classNames;
-    }
-
-    private static Object loadAndInstanceClass(String clazzName, ClassLoader classLoader) {
-        try {
-            Class<?> forName = classLoader.loadClass(clazzName);
-            try {
-                Object newInstance = forName.newInstance();
-                System.out.println(newInstance);
-                return newInstance;
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private static void visitAndSaveFile(Map<String, List<URL>> map, File dir, boolean first, File currentDir) throws MalformedURLException {
@@ -217,6 +210,37 @@ public class ScanPlugins {
             urls.add(dir.toURI().toURL());
         }
 
+    }
+
+    private static List<String> getClassNames(Enumeration<JarEntry> entries) {
+        List<String> classNames = new ArrayList<String>();
+        while (entries.hasMoreElements()) {
+            JarEntry nextElement = entries.nextElement();
+            String name = nextElement.getName();
+
+            if (name.endsWith(".class")) {
+                String replace = name.replace(".class", "").replace("/", ".");
+                classNames.add(replace);
+            }
+        }
+        return classNames;
+    }
+
+    private static Object loadAndInstanceClass(String clazzName, ClassLoader classLoader) {
+        try {
+            Class<?> forName = classLoader.loadClass(clazzName);
+            try {
+                Object newInstance = forName.newInstance();
+                return newInstance;
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private static Map<String, Object> transStringToMap(String mapString, String separator, String pairSeparator) {
